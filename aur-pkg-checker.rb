@@ -12,14 +12,22 @@ require 'net/http' # use net/http because it's in ruby std libs
 
 # list of installed packages
 # hash with pkg names as keys and versions as values
-# TODO: get the actual list from pacman (Arch Linux package manager)
-installed_pkg_list = Hash[
-  "blueman"                 => "1.99.alpha1-2",
-  "sublime-text"            => "2.0.2-3",
-]
+def get_installed_pkg_list()
+  pkg_list = Hash.new() # init new hash
+  # run pacman command and add results to hash
+  pacman_output = %x[pacman -Qm].split(/[\n]/)
+  pacman_output.each do |pkg|
+    name,version = pkg.split
+    pkg_list[name] = version
+  end
+  pkg_list
+end
 
-# PKGBUILD file path example:
-# https://aur.archlinux.org/packages/ # this gets the index page
+# read installed packages
+installed_pkg_list = get_installed_pkg_list
+
+# get package info from its AUR page:
+# https://aur.archlinux.org/packages/blueman/
 def get_pkg_info(pkgname)
   Net::HTTP.get(
     URI.parse("https://aur.archlinux.org/packages/" + pkgname))
@@ -35,13 +43,14 @@ def get_latest_pkg_version(infocontent)
   versionline.split(/[\s,<]/)[5]
 end
 
-print "Checking latest versions\n"
+print "Current time is #{Time.now}\n"
+print "Checking package versions\n"
 installed_pkg_list.each do |name, current_version|
   latest_version = get_latest_pkg_version(get_pkg_info(name))
 
   print name + ": " + current_version
   if current_version >= latest_version
-    print " => up to date, OK\n"
+    print " => OK\n"
   else
     print " => new version available: #{latest_version}\n"
   end

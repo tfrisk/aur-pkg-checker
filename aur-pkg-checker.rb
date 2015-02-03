@@ -49,9 +49,14 @@ installed_pkg_list.each do |name, current_version|
   latest_version = get_latest_pkg_version(get_pkg_info(name))
 
   print name + ": " + current_version
-  if current_version >= latest_version
+
+  # use pacmans own vercmp tool to check the versions
+  cstatus = %x[vercmp #{current_version} #{latest_version}].to_i
+  if cstatus == 0 # current = latest
     print " => OK\n"
-  else
+  elsif cstatus < 0 # current < latest
     print " => new version available: #{latest_version}\n"
+  elsif cstatus > 0 # current > latest
+    print " => newer version installed: #{latest_version}"
   end
 end

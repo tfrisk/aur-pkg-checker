@@ -19,18 +19,13 @@ installed_pkg_list = Hash[
 ]
 
 # PKGBUILD file path example:
-# https://aur.archlinux.org/packages/bl/blueman/PKGBUILD
-# note the extra directory of first 2 chars from the name
+# https://aur.archlinux.org/packages/ # this gets the index page
 def get_pkg_info(pkgname)
   Net::HTTP.get(
-    URI.parse(
-      "https://aur.archlinux.org/packages/" + pkgname)) #+
-      #pkgname[0..1] + "/" +
-      #pkgname +
-      #{}"/PKGBUILD"))
+    URI.parse("https://aur.archlinux.org/packages/" + pkgname))
 end
 
-# version line example:
+# parse html source, version line example:
 # <h2>Package Details: blueman 1.99.alpha1-2</h2>
 # this current implementation is probably too fragile for production use
 def get_latest_pkg_version(infocontent)
@@ -40,15 +35,12 @@ def get_latest_pkg_version(infocontent)
   versionline.split(/[\s,<]/)[5]
 end
 
-#print get_pkg_pkgbuild("blueman")
-#print get_latest_pkg_version(get_pkg_info("sublime-text"))
-
 print "Checking latest versions\n"
 installed_pkg_list.each do |name, current_version|
   latest_version = get_latest_pkg_version(get_pkg_info(name))
 
   print name + ": " + current_version
-  if current_version == latest_version
+  if current_version >= latest_version
     print " => up to date, OK\n"
   else
     print " => new version available: #{latest_version}\n"

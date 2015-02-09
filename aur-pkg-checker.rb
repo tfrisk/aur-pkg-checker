@@ -11,6 +11,8 @@
 require 'net/http' # use net/http because it's in ruby std libs
 
 class AurPackageChecker
+  @@aur_base_url = "https://aur.archlinux.org/packages/"
+
   # list of installed packages
   # hash with pkg names as keys and versions as values
   def get_installed_pkg_list()
@@ -28,7 +30,7 @@ class AurPackageChecker
   # https://aur.archlinux.org/packages/blueman/
   def get_pkg_info(pkgname)
     Net::HTTP.get(
-      URI.parse("https://aur.archlinux.org/packages/" + pkgname))
+      URI.parse(@@aur_base_url + pkgname))
   end
 
   # parse html source, version line example:

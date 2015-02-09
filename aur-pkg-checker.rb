@@ -43,30 +43,49 @@ class AurPackageChecker
     versionline.split(/[\s,<]/)[5]
   end
 
+  # use pacmans own vercmp tool to check the versions
   def compare_versions(current, latest)
     %x[vercmp #{current} #{latest}].to_i
   end
+
+  def print_output_header()
+    header = "Current time is #{Time.now}\n" +
+            "Checking package versions\n"
+    return header
+  end
+
+  def make_output_row(status)
+    line = status[:name] + ": " + status[:current]
+    if status[:comparison] == 0 # current = latest
+      line += " => OK\n"
+    elsif status[:comparison] < 0 # current < latest
+      line += " => new version available: #{status[:latest]}\n"
+    elsif status[:comparison] > 0 # current > latest
+      line += " => newer version installed: #{status[:latest]}"
+    end
+    return line
+  end
+
+  # iterate given list
+  def iterate_list(pkglist)
+    pkglist.each do |name, current_version|
+      status = {}
+      status[:name] = name
+      status[:current] = current_version
+      status[:latest] = get_latest_pkg_version(get_pkg_info(name))
+      status[:comparison] = compare_versions(status[:current], status[:latest])
+
+      print make_output_row(status)
+    end
+  end
 end
 
-checker = AurPackageChecker.new
+if $0 == __FILE__ # guard class execution for test suite
+  checker = AurPackageChecker.new
 
-# read installed packages
-installed_pkg_list = checker.get_installed_pkg_list
+  # read installed packages
+  installed_pkg_list = checker.get_installed_pkg_list
 
-print "Current time is #{Time.now}\n"
-print "Checking package versions\n"
-installed_pkg_list.each do |name, current_version|
-  latest_version = checker.get_latest_pkg_version(checker.get_pkg_info(name))
-
-  print name + ": " + current_version
-
-  # use pacmans own vercmp tool to check the versions
-  cstatus = checker.compare_versions(current_version, latest_version)
-  if cstatus == 0 # current = latest
-    print " => OK\n"
-  elsif cstatus < 0 # current < latest
-    print " => new version available: #{latest_version}\n"
-  elsif cstatus > 0 # current > latest
-    print " => newer version installed: #{latest_version}"
-  end
+  print checker.print_output_header()
+  checker.iterate_list(installed_pkg_list)
 end

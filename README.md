@@ -25,10 +25,10 @@ In this example the user has 3 installed packages. Two of these packages are up-
 
 The script can be run with regular user privileges.
 
+By default the script will download updated packages to a <code>build</code> directory where the script is ran. Automatic download can be disabled with <code>'-c'</code> command line option.
+
 ## TODO
 
-* Command line option parsing
-* Download new package files
 * Log actions
 * Ignored package list (don't want to update certain packages)
 * Install new packages

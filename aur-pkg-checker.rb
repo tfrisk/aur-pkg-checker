@@ -13,6 +13,7 @@ require 'optparse' # command line option parser
 
 class AurPackageChecker
   @@aur_base_url = "https://aur.archlinux.org/packages/"
+  @@tmpdir = Dir.pwd + "/build/"
 
   # list of installed packages
   # hash with pkg names as keys and versions as values
@@ -29,9 +30,33 @@ class AurPackageChecker
 
   # get package info from its AUR page:
   # https://aur.archlinux.org/packages/blueman/
-  def get_pkg_info(pkgname)
+  def download_pkg_info(pkgname)
     Net::HTTP.get(
       URI.parse(@@aur_base_url + pkgname))
+  end
+
+  # get package tarball from its AUR page:
+  # https://aur.archlinux.org/packages/bl/blueman/blueman.tar.gz
+  def download_pkg_tarball(pkgname)
+    uri = @@aur_base_url +
+        pkgname[0..1] + "/" +
+        pkgname + "/" +
+        pkgname + ".tar.gz"
+    print "Downloading " + uri + "\n"
+    res = Net::HTTP.get_response(URI.parse(uri))
+    if res.is_a?(Net::HTTPSuccess)
+      verify_tmpdir()
+      open(@@tmpdir + pkgname + ".tar.gz", "wb") do |file|
+        file.write(res.body)
+      end
+    end
+  end
+
+  # create tmpdir if required
+  def verify_tmpdir()
+    if !Dir.exists?(@@tmpdir)
+      %x[mkdir #{@@tmpdir}]
+    end
   end
 
   # parse html source, version line example:
@@ -69,15 +94,18 @@ class AurPackageChecker
 
   # iterate given list
   def iterate_list(pkglist)
+    checked_list = {}
     pkglist.each do |name, current_version|
       status = {}
       status[:name] = name
       status[:current] = current_version
-      status[:latest] = get_latest_pkg_version(get_pkg_info(name))
+      status[:latest] = get_latest_pkg_version(download_pkg_info(name))
       status[:comparison] = compare_versions(status[:current], status[:latest])
 
       print make_output_row(status)
+      checked_list[name] = status
     end
+    return checked_list
   end
 end
 
@@ -89,6 +117,9 @@ if $0 == __FILE__ # guard class execution for test suite
     opts.on('-h', '--help', 'Display help') do
       puts opts
       exit
+    end
+    opts.on('-c', '--check-only', 'Check only, do not download') do
+      options[:check_only] = true
     end
   end
   # parse command line, catch InvalidOption
@@ -105,5 +136,16 @@ if $0 == __FILE__ # guard class execution for test suite
   installed_pkg_list = checker.get_installed_pkg_list
 
   print checker.print_output_header()
-  checker.iterate_list(installed_pkg_list)
+  checked_list = checker.iterate_list(installed_pkg_list)
+  print "Checking completed.\n"
+
+  # download updated packages unless check-only mode
+  if (!options[:check_only])
+    print "Downloading updated packages..\n"
+    checked_list.each do |name, details|
+      if (details[:comparison] == -1)
+        checker.download_pkg_tarball(name)
+      end
+    end
+  end
 end

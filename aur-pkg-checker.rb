@@ -9,6 +9,7 @@
 # Distributed under MIT License
 
 require 'net/http' # use net/http because it's in ruby std libs
+require 'optparse' # command line option parser
 
 class AurPackageChecker
   @@aur_base_url = "https://aur.archlinux.org/packages/"
@@ -81,6 +82,23 @@ class AurPackageChecker
 end
 
 if $0 == __FILE__ # guard class execution for test suite
+  # command line parser config
+  options = {}
+  parser = OptionParser.new do |opts|
+    opts.banner = "Usage: aur-pkg-checker.rb [options]"
+    opts.on('-h', '--help', 'Display help') do
+      puts opts
+      exit
+    end
+  end
+  # parse command line, catch InvalidOption
+  begin parser.parse(ARGV)
+  rescue OptionParser::InvalidOption => e
+    puts e
+    puts parser
+    exit 1
+  end
+
   checker = AurPackageChecker.new
 
   # read installed packages

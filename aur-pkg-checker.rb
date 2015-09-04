@@ -64,9 +64,13 @@ class AurPackageChecker
   # this current implementation is probably too fragile for production use
   def get_latest_pkg_version(infocontent)
     # first get the relevant file with regex
-    versionline = /^.*Package Details:.*$/.match(infocontent)[0]
-    # then use split to extract the version info
-    versionline.split(/[\s,<]/)[5]
+    begin
+      versionline = /^.*Package Details:.*$/.match(infocontent)[0]
+      # then use split to extract the version info
+      versionline.split(/[\s,<]/)[5]
+    rescue
+      "PACKAGE NOT FOUND!\n"
+    end
   end
 
   # use pacmans own vercmp tool to check the versions

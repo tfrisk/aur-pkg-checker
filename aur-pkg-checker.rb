@@ -42,13 +42,16 @@ class AurPackageChecker
         pkgname[0..1] + "/" +
         pkgname + "/" +
         pkgname + ".tar.gz"
-    print "Downloading " + uri + "\n"
+    print "Downloading " + uri
     res = Net::HTTP.get_response(URI.parse(uri))
     if res.is_a?(Net::HTTPSuccess)
       verify_tmpdir()
       open(@@tmpdir + pkgname + ".tar.gz", "wb") do |file|
         file.write(res.body)
       end
+      print "..OK\n"
+    else
+      print "..Failed!\n"
     end
   end
 

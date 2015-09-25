@@ -13,6 +13,7 @@ require 'optparse' # command line option parser
 
 class AurPackageChecker
   @@aur_base_url = "https://aur.archlinux.org/packages/"
+  @@aur_download_url = "https://aur.archlinux.org/cgit/aur.git/snapshot/"
   @@tmpdir = Dir.pwd + "/build/"
 
   # list of installed packages
@@ -38,10 +39,7 @@ class AurPackageChecker
   # get package tarball from its AUR page:
   # https://aur.archlinux.org/packages/bl/blueman/blueman.tar.gz
   def download_pkg_tarball(pkgname)
-    uri = @@aur_base_url +
-        pkgname[0..1] + "/" +
-        pkgname + "/" +
-        pkgname + ".tar.gz"
+    uri = @@aur_download_url + pkgname + ".tar.gz"
     print "Downloading " + uri
     res = Net::HTTP.get_response(URI.parse(uri))
     if res.is_a?(Net::HTTPSuccess)
